@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+        env:
+          LANGSMITH_TRACING: "false"
+
+      - name: Build
+        run: pnpm build
+        env:
+          # Stub values so Next.js env validation passes at build time.
+          # Real keys live in Vercel project env.
+          ANTHROPIC_API_KEY: "sk-ant-stub"
+          LANGSMITH_API_KEY: "ls-stub"
+          LANGSMITH_PROJECT: "housing-rec-ci"
+          LANGSMITH_TRACING: "false"
+          DATABASE_URL: "postgres://stub:stub@localhost:5432/stub"
+          UPSTASH_REDIS_REST_URL: "https://stub.upstash.io"
+          UPSTASH_REDIS_REST_TOKEN: "stub"
+          NEXT_PUBLIC_MAPBOX_TOKEN: "pk.stub"
+          REAL_ESTATE_API_KEY: "stub"
+          WALK_SCORE_API_KEY: "stub"
+          GOOGLE_PLACES_API_KEY: "stub"
+          REALTOR_AFFILIATE_ID: "stub"
+          APARTMENTS_AFFILIATE_ID: "stub"
