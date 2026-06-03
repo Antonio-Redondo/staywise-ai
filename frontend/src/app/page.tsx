@@ -5,7 +5,7 @@ import FtcDisclosure from './components/ftc-disclosure'
 export default function Page() {
   return (
     <main>
-      <h1>Find homes you'll love</h1>
+      <h1>Find homes you will love</h1>
       <FtcDisclosure />
       <RecommendFlow />
     </main>
