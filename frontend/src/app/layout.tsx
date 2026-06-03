@@ -1,5 +1,4 @@
 import React from 'react'
-import '../styles/globals.css'
 import ClientInit from './components/client-init'
 
 export const metadata = {
