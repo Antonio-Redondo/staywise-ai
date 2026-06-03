@@ -14,6 +14,9 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend  # ← ALL run: steps now execute in frontend/
 
     steps:
       - name: Checkout
@@ -29,6 +32,7 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml  # ← key fix
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -47,8 +51,6 @@ jobs:
       - name: Build
         run: pnpm build
         env:
-          # Stub values so Next.js env validation passes at build time.
-          # Real keys live in Vercel project env.
           ANTHROPIC_API_KEY: "sk-ant-stub"
           LANGSMITH_API_KEY: "ls-stub"
           LANGSMITH_PROJECT: "housing-rec-ci"
