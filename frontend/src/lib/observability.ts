@@ -1,36 +1,28 @@
-export async function initObservability() {
-  if (typeof window === 'undefined') return
+// frontend/src/lib/observability.ts
 
-  const sentryDsn = process.env.NEXT_PUBLIC_SENTRY_DSN
-  const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY
-  const posthogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com'
+/**
+ * Observability stub.
+ *
+ * Sentry + PostHog will be wired in once we add the dependencies. For now,
+ * these are no-ops so the rest of the app can call them safely.
+ */
 
-  if (sentryDsn) {
-    try {
-   
-      Sentry.init({ dsn: sentryDsn, environment: process.env.NODE_ENV })
-    } catch (e) {
-      // Fail gracefully if package not installed or init fails
-      // eslint-disable-next-line no-console
-      console.warn('Sentry init failed', e)
-    }
-  }
+export function initObservability(): void {
+  // no-op
+}
 
-  if (posthogKey) {
-    try {
- 
-      posthog.init(posthogKey, { api_host: posthogHost })
-      // expose for manual use in tests or other modules
-      ;(window as any).posthog = posthog
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.warn('PostHog init failed', e)
-    }
+export function captureEvent(name: string, properties?: Record<string, unknown>): void {
+  // no-op
+  if (process.env.NODE_ENV === 'development') {
+    // eslint-disable-next-line no-console
+    console.debug('[observability] captureEvent', name, properties)
   }
 }
 
-export function trackRecommendSubmitted(payload?: Record<string, any>) {
-  if (typeof window === 'undefined') return
-  const ph = (window as any).posthog
-  if (ph && typeof ph.capture === 'function') ph.capture('recommend_submitted', payload || {})
+export function captureError(error: unknown, context?: Record<string, unknown>): void {
+  // no-op
+  if (process.env.NODE_ENV === 'development') {
+    // eslint-disable-next-line no-console
+    console.error('[observability] captureError', error, context)
+  }
 }
