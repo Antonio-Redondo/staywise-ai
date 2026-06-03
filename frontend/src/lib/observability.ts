@@ -7,7 +7,7 @@ export async function initObservability() {
 
   if (sentryDsn) {
     try {
-      const Sentry = await import('@sentry/browser')
+   
       Sentry.init({ dsn: sentryDsn, environment: process.env.NODE_ENV })
     } catch (e) {
       // Fail gracefully if package not installed or init fails
@@ -18,7 +18,7 @@ export async function initObservability() {
 
   if (posthogKey) {
     try {
-      const posthog = await import('posthog-js')
+ 
       posthog.init(posthogKey, { api_host: posthogHost })
       // expose for manual use in tests or other modules
       ;(window as any).posthog = posthog
