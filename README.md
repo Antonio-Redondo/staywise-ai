@@ -1,6 +1,6 @@
 # `.github/` — Complete Copilot configuration for the housing recommendation app
 
-Everything you need to build the app with GitHub Copilot. Drop this folder into your repo root; Copilot picks up the configuration automatically.
+Everything you need to build the app with GitHub Copilot. Drop this folder into your repo root; Copilot picks up the configuration automatically .
 
 ## Two ways to build
 
