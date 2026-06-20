@@ -9,8 +9,8 @@ import ListingCard from '../../src/app/components/listing-card'
 describe('UI components', () => {
   test('IntentCard renders tags and budgets', () => {
     render(<IntentCard intent={{ lifestyle_tags: ['walkable'], budget_min: 500000, budget_max: 800000 }} />)
-    expect(screen.getByText('walkable')).toBeInTheDocument()
-    expect(screen.getByText('$500000')).toBeInTheDocument()
+    expect(screen.getByText(/walkable/)).toBeInTheDocument()
+    expect(screen.getByText(/\$500,000/)).toBeInTheDocument()
   })
 
   test('NeighborhoodMap lists neighborhoods', () => {

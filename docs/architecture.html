@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>StayWiseAI — Architecture</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #0b1020;
+    --panel: #11182e;
+    --panel-2: #161f3a;
+    --text: #e6ebf5;
+    --muted: #9aa6c2;
+    --faint: #6b7799;
+    --border: rgba(148, 163, 184, 0.16);
+    --brand-1: #6366f1;
+    --brand-2: #8b5cf6;
+    --brand-3: #ec4899;
+    --accent: #22d3ee;
+    --good: #34d399;
+    --warn: #fbbf24;
+    --bad: #f87171;
+    --code-bg: #0d1424;
+    --gradient: linear-gradient(135deg, #6366f1, #8b5cf6 55%, #ec4899);
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(1100px 600px at 12% -8%, rgba(99,102,241,.20), transparent 60%),
+      radial-gradient(900px 500px at 98% 0%, rgba(236,72,153,.16), transparent 55%),
+      var(--bg);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: #a5b4fc; text-decoration: none; }
+  a:hover { color: #c7d2fe; }
+
+  .layout { display: grid; grid-template-columns: 280px 1fr; gap: 0; max-width: 1400px; margin: 0 auto; }
+
+  /* Sidebar */
+  aside {
+    position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+    padding: 28px 20px; border-right: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .brand .mark {
+    width: 40px; height: 40px; border-radius: 11px; background: var(--gradient);
+    display: grid; place-items: center; font-size: 20px; box-shadow: 0 8px 24px -8px rgba(99,102,241,.7);
+  }
+  .brand .name { font-weight: 800; font-size: 18px; letter-spacing: -.02em; }
+  .brand .name span { background: var(--gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .tagline { color: var(--faint); font-size: 12.5px; margin: 0 0 22px 52px; }
+  nav a {
+    display: block; padding: 7px 12px; border-radius: 9px; color: var(--muted);
+    font-size: 14px; font-weight: 550; transition: background .15s, color .15s;
+  }
+  nav a:hover { background: var(--panel-2); color: var(--text); }
+  nav .group { margin: 16px 0 6px; padding-left: 12px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); font-weight: 700; }
+
+  /* Main */
+  main { padding: 56px clamp(24px, 5vw, 72px) 120px; max-width: 1000px; }
+  header.hero { margin-bottom: 48px; }
+  header.hero .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 650;
+    color: #c7d2fe; background: rgba(99,102,241,.14); border: 1px solid rgba(99,102,241,.3);
+    padding: 6px 13px; border-radius: 999px; margin-bottom: 18px;
+  }
+  header.hero h1 { font-size: clamp(34px, 5.5vw, 50px); line-height: 1.05; letter-spacing: -.03em; margin: 0 0 14px; }
+  header.hero h1 span { background: var(--gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  header.hero p { color: var(--muted); font-size: 18px; max-width: 70ch; margin: 0; }
+
+  section { margin: 0 0 64px; scroll-margin-top: 24px; }
+  h2 {
+    font-size: 27px; letter-spacing: -.02em; margin: 0 0 8px; padding-top: 12px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  h2 .num {
+    font-size: 13px; font-weight: 800; color: #fff; background: var(--gradient);
+    width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; flex: none;
+  }
+  h3 { font-size: 19px; letter-spacing: -.01em; margin: 30px 0 8px; color: #eef1f8; }
+  h4 { font-size: 15px; margin: 20px 0 6px; color: var(--accent); text-transform: uppercase; letter-spacing: .05em; }
+  p { color: #d4dbeb; }
+  .lead { color: var(--muted); font-size: 16.5px; }
+
+  .panel { background: linear-gradient(180deg, var(--panel), rgba(17,24,46,.5)); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 24px; margin: 18px 0; }
+  .mermaid-wrap { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin: 20px 0; overflow-x: auto; }
+  .mermaid-wrap .cap { color: var(--faint); font-size: 12.5px; text-align: center; margin-top: 12px; }
+  .mermaid { display: flex; justify-content: center; }
+
+  .grid { display: grid; gap: 16px; }
+  .grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .grid.cols-3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .card { background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+  .card h4 { margin-top: 0; color: #c7d2fe; }
+  .card .k { font-size: 13px; color: var(--faint); }
+
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14.5px; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--faint); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
+  tbody tr:hover { background: rgba(99,102,241,.06); }
+  td code, p code, li code, h4 code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; font-size: 13px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #a7f3d0; }
+
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; overflow-x: auto; margin: 16px 0; }
+  pre code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: #d7dcea; }
+  .tok-k { color: #c4b5fd; } .tok-s { color: #86efac; } .tok-c { color: #6b7799; font-style: italic; } .tok-n { color: #fca5a5; }
+
+  .badge { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; vertical-align: middle; }
+  .b-good { background: rgba(52,211,153,.16); color: var(--good); border: 1px solid rgba(52,211,153,.3); }
+  .b-warn { background: rgba(251,191,36,.14); color: var(--warn); border: 1px solid rgba(251,191,36,.3); }
+  .b-info { background: rgba(99,102,241,.16); color: #a5b4fc; border: 1px solid rgba(99,102,241,.3); }
+
+  .note { border-left: 3px solid var(--brand-2); background: rgba(139,92,246,.08); padding: 12px 16px; border-radius: 0 10px 10px 0; margin: 16px 0; }
+  .note.warn { border-color: var(--warn); background: rgba(251,191,36,.07); }
+  .note.good { border-color: var(--good); background: rgba(52,211,153,.07); }
+  .note b { color: #fff; }
+
+  ul.clean { list-style: none; padding-left: 0; }
+  ul.clean li { padding-left: 26px; position: relative; margin: 7px 0; }
+  ul.clean li::before { content: "▹"; position: absolute; left: 6px; color: var(--brand-2); }
+
+  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  .pill { font-size: 12.5px; font-weight: 600; padding: 5px 12px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--border); color: var(--muted); }
+
+  footer { color: var(--faint); font-size: 13px; border-top: 1px solid var(--border); padding-top: 22px; margin-top: 40px; }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    aside { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    nav { columns: 2; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside>
+    <div class="brand">
+      <span class="mark">◆</span>
+      <span class="name">Stay<span>Wise</span>AI</span>
+    </div>
+    <p class="tagline">Architecture &amp; system design</p>
+    <nav>
+      <div class="group">Big picture</div>
+      <a href="#overview">1 · Overview</a>
+      <a href="#topology">2 · System topology</a>
+      <a href="#stack">3 · Tech stack</a>
+      <div class="group">Runtime</div>
+      <a href="#lifecycle">4 · Request lifecycle</a>
+      <a href="#pipeline">5 · The 5-agent pipeline</a>
+      <a href="#scoring">6 · Scoring &amp; ranking math</a>
+      <div class="group">Components</div>
+      <a href="#backend">7 · Backend</a>
+      <a href="#frontend">8 · Frontend</a>
+      <a href="#contract">9 · API &amp; data models</a>
+      <div class="group">Operations</div>
+      <a href="#config">10 · Config &amp; demo mode</a>
+      <a href="#persistence">11 · Persistence &amp; observability</a>
+      <a href="#run">12 · Running &amp; testing</a>
+      <a href="#decisions">13 · Design decisions</a>
+    </nav>
+  </aside>
+
+  <main>
+    <header class="hero">
+      <span class="eyebrow">✦ Living document · generated from the codebase</span>
+      <h1>StayWiseAI <span>Architecture</span></h1>
+      <p>A natural-language housing recommendation engine. The user describes the home they want;
+        a five-stage pipeline parses intent, scores neighborhoods, retrieves listings, ranks them
+        against the request, and explains every match. This document covers the whole system —
+        topology, runtime flow, the pipeline internals, data contracts, and operations.</p>
+    </header>
+
+    <!-- 1 OVERVIEW -->
+    <section id="overview">
+      <h2><span class="num">1</span> Overview</h2>
+      <p class="lead">Two deployable parts talk over a single JSON/HTTP boundary.</p>
+      <div class="grid cols-2">
+        <div class="card">
+          <h4>Frontend</h4>
+          <p class="k">Next.js 15 (App Router) · React 18 · TypeScript. Renders the search
+            experience, validates payloads with Zod, and calls the backend. Runs on
+            <code>:3000</code>.</p>
+        </div>
+        <div class="card">
+          <h4>Backend</h4>
+          <p class="k">FastAPI · Python 3.11 · a LangGraph-style agent pipeline. Parses the query
+            and produces ranked, explained recommendations. Runs on <code>:8000</code>.</p>
+        </div>
+      </div>
+      <p>The defining design choice is <b>graceful degradation</b>: every external dependency
+        (Anthropic, a real-estate provider, Postgres, LangSmith, Sentry) is optional. With no keys
+        configured the app runs in <span class="badge b-info">demo mode</span> — heuristic agents
+        over a built-in San Francisco catalog — so it is fully runnable on a laptop with zero
+        accounts.</p>
+      <div class="pill-row">
+        <span class="pill">Natural-language intent</span>
+        <span class="pill">Neighborhood scoring</span>
+        <span class="pill">Listing retrieval</span>
+        <span class="pill">Preference-weighted ranking</span>
+        <span class="pill">Per-listing explanations</span>
+        <span class="pill">Affiliate click tracking</span>
+      </div>
+    </section>
+
+    <!-- 2 TOPOLOGY -->
+    <section id="topology">
+      <h2><span class="num">2</span> System topology</h2>
+      <p class="lead">How the pieces connect, and which links are optional.</p>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+flowchart TB
+    U([User / Browser])
+
+    subgraph FE["Frontend · Next.js :3000"]
+      RF["RecommendFlow<br/>(client component)"]
+      AC["api-client.ts<br/>Zod-validated fetch"]
+      TR["/api/track-click<br/>route handler"]
+    end
+
+    subgraph BE["Backend · FastAPI :8000"]
+      MW["Middleware<br/>CORS · Exception · Rate limit"]
+      RT["Routes<br/>/api/recommend · /api/track-click · /health"]
+      PIPE["Agent pipeline<br/>(5 stages)"]
+    end
+
+    subgraph EXT["External services (all optional)"]
+      AN["Anthropic Claude"]
+      RE["Real-estate API"]
+      WS["Walk Score / Google Places"]
+      OBS["LangSmith · Sentry"]
+    end
+
+    DB[("Postgres<br/>clicks")]
+
+    U --> RF --> AC -->|"POST /api/recommend"| MW --> RT --> PIPE
+    U -.click.-> TR -->|"POST /api/track-click"| MW
+    PIPE -.optional.-> AN
+    PIPE -.optional.-> RE
+    PIPE -.optional.-> WS
+    RT -->|click logging| DB
+    BE -.traces/errors.-> OBS
+
+    classDef opt stroke-dasharray:5 5,stroke:#8b5cf6,fill:#161f3a,color:#e6ebf5;
+    classDef core fill:#1e2747,stroke:#6366f1,color:#e6ebf5;
+    class AN,RE,WS,OBS opt;
+    class RF,AC,TR,MW,RT,PIPE core;
+        </div>
+        <div class="cap">Solid lines are the always-on local path; dashed lines are optional integrations that no-op in demo mode.</div>
+      </div>
+      <div class="note good"><b>Demo-mode path:</b> Browser → api-client → FastAPI → pipeline → JSON.
+        No external service, no database, no keys required for the recommendation flow.</div>
+    </section>
+
+    <!-- 3 STACK -->
+    <section id="stack">
+      <h2><span class="num">3</span> Tech stack</h2>
+      <div class="grid cols-2">
+        <div class="card">
+          <h4>Frontend</h4>
+          <ul class="clean">
+            <li>Next.js <code>15</code> · React <code>18</code></li>
+            <li>TypeScript <code>5.4</code></li>
+            <li>Zod <code>4</code> — runtime schema validation</li>
+            <li>Vitest + Testing Library (unit) · Playwright (e2e)</li>
+            <li>pnpm workspace · plain CSS design system (<code>globals.css</code>)</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Backend</h4>
+          <ul class="clean">
+            <li>FastAPI <code>0.104</code> · Uvicorn</li>
+            <li>LangGraph <code>0.0.48</code> + langchain-core (pipeline scaffolding)</li>
+            <li>Anthropic SDK — Claude (intent + explanation, optional)</li>
+            <li>SQLAlchemy <code>2</code> + psycopg2 → Postgres</li>
+            <li>Pydantic <code>2</code> models · httpx clients</li>
+            <li>pytest · Sentry + LangSmith (observability)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="note"><b>LLM models.</b> The design targets Claude <code>claude-sonnet-4-6</code> for
+        intent parsing and <code>claude-opus-4-7</code> for explanations. In the current build those
+        stages ship with deterministic heuristic fallbacks so the app works without an API key.</div>
+    </section>
+
+    <!-- 4 LIFECYCLE -->
+    <section id="lifecycle">
+      <h2><span class="num">4</span> Request lifecycle</h2>
+      <p class="lead">A single <code>POST /api/recommend</code>, end to end.</p>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+sequenceDiagram
+    autonumber
+    participant B as Browser (RecommendFlow)
+    participant A as api-client.ts
+    participant M as Middleware stack
+    participant R as routes.py
+    participant P as Pipeline (graph.py)
+    participant C as RealEstate client
+
+    B->>A: recommend({ userQuery, threadId })
+    A->>A: RecommendRequest.parse() (Zod)
+    A->>M: POST /api/recommend
+    M->>M: CORS → rate limit (60/hr/IP) → exception guard
+    M->>R: dispatch
+    R->>P: await arun_pipeline(userQuery, threadId)
+    P->>P: 1 · parse_intent()
+    P->>P: 2 · score_neighborhoods()
+    P->>C: 3 · fetch_and_normalize_listings()
+    C-->>P: listings (demo catalog or live API)
+    P->>P: 4 · rank_listings() — filter + sort
+    P->>P: 5 · generate_explanation() per listing
+    P-->>R: State.to_dict()
+    R-->>M: JSON
+    M-->>A: 200 + CORS headers
+    A->>A: RecommendResponse.parse() (Zod)
+    A-->>B: render intent · neighborhoods · matches
+        </div>
+        <div class="cap">The route handler is <code>async</code> and <code>await</code>s the pipeline directly — no nested event loop.</div>
+      </div>
+      <div class="note warn"><b>Why CORS is the outermost middleware.</b> Middleware added last wraps
+        first. CORS sits outermost so that <i>error</i> and <i>429</i> responses also carry
+        <code>Access-Control-Allow-Origin</code>. Otherwise the browser blocks the error body and the
+        failure surfaces unhelpfully as “Failed to fetch.”</div>
+    </section>
+
+    <!-- 5 PIPELINE -->
+    <section id="pipeline">
+      <h2><span class="num">5</span> The 5-agent pipeline</h2>
+      <p class="lead">A shared <code>State</code> object flows through five stages in
+        <code>app/graph/graph.py</code>. Each stage reads from and writes to that state.</p>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+flowchart LR
+    Q["userQuery<br/>(natural language)"] --> S1
+
+    subgraph S1["1 · Intent"]
+      I["parse_intent()<br/>budget · bedrooms<br/>preferences · amenities"]
+    end
+    subgraph S2["2 · Neighborhood"]
+      N["score_neighborhoods()<br/>walk + price heuristic"]
+    end
+    subgraph S3["3 · Retrieval"]
+      R["fetch_and_normalize_listings()<br/>→ NormalizedListing[]"]
+    end
+    subgraph S4["4 · Scoring + Ranking"]
+      K["rank_listings()<br/>filter + weighted sort"]
+    end
+    subgraph S5["5 · Explanation"]
+      E["generate_explanation()<br/>per-listing 'why'"]
+    end
+
+    S1 --> S2 --> S3 --> S4 --> S5 --> OUT["State → JSON"]
+
+    classDef llm fill:#2a1e47,stroke:#8b5cf6,color:#e6ebf5;
+    classDef pure fill:#15233f,stroke:#22d3ee,color:#e6ebf5;
+    class I,E llm;
+    class N,R,K pure;
+        </div>
+        <div class="cap">Violet = LLM-capable stages (heuristic fallback today). Cyan = pure / deterministic stages.</div>
+      </div>
+
+      <h3>Stage by stage</h3>
+      <table>
+        <thead><tr><th>#</th><th>Stage</th><th>Function</th><th>What it does</th><th>Writes to State</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Intent</td><td><code>parse_intent</code></td>
+            <td>Regex/keyword parse of budget, bedrooms, lifestyle preferences (<code>quiet</code>,
+              <code>transit</code>, <code>spacious</code>, <code>cheaper</code>, <code>premium</code>,
+              <code>walkable</code>) and amenity must-haves (parking, laundry, gym, pool, pet).</td>
+            <td><code>intent</code></td></tr>
+          <tr><td>2</td><td>Neighborhood</td><td><code>score_neighborhoods</code></td>
+            <td>Scores candidate neighborhoods: 60% walkability + 40% inverse median price (0–1).</td>
+            <td><code>neighborhood_scores</code></td></tr>
+          <tr><td>3</td><td>Retrieval</td><td><code>fetch_and_normalize_listings</code></td>
+            <td>Pulls raw listings via the real-estate client and normalizes them into
+              <code>NormalizedListing</code> models. Demo catalog when no API key.</td>
+            <td><code>listings</code></td></tr>
+          <tr><td>4</td><td>Scoring + Ranking</td><td><code>rank_listings</code></td>
+            <td>Hard-filters by budget and bedrooms, computes a weighted base score, applies
+              preference boosts, and sorts best-first.</td>
+            <td><code>scored</code></td></tr>
+          <tr><td>5</td><td>Explanation</td><td><code>generate_explanation</code></td>
+            <td>Builds a human “why this matches” string per listing (budget fit, matched amenities,
+              quiet/transit/spacious cues, bedrooms).</td>
+            <td><code>explained</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3>The shared State object</h3>
+      <pre><code><span class="tok-c"># app/graph/state.py — a dataclass threaded through every stage</span>
+<span class="tok-k">@dataclass</span>
+<span class="tok-k">class</span> <span class="tok-n">State</span>:
+    user_query: str
+    thread_id: Optional[str] = None
+    intent: Optional[dict] = None
+    neighborhood_scores: list = []   <span class="tok-c"># stage 2</span>
+    listings: list = []              <span class="tok-c"># stage 3</span>
+    scored: list = []                <span class="tok-c"># stage 4 — [{listing, score}], ranked</span>
+    explained: list = []             <span class="tok-c"># stage 5 — [{listing_id, explanation}]</span>
+    errors: list = []</code></pre>
+      <div class="note"><b>Three entry points</b> live in <code>graph.py</code>:
+        <code>arun_pipeline()</code> (async, used by the route), <code>run_pipeline()</code>
+        (sync wrapper for tests), and <code>build_graph()</code> (reserved for a full LangGraph
+        compilation). All share the same async stage implementation.</div>
+    </section>
+
+    <!-- 6 SCORING -->
+    <section id="scoring">
+      <h2><span class="num">6</span> Scoring &amp; ranking math</h2>
+      <p class="lead">This is what makes results <i>respond to the query</i> rather than returning a
+        fixed list.</p>
+
+      <h3>Base listing score — <code>score_listing()</code></h3>
+      <p>A weighted blend, each component clamped to 0–100:</p>
+      <table>
+        <thead><tr><th>Component</th><th>Weight</th><th>Formula</th></tr></thead>
+        <tbody>
+          <tr><td>Price fit</td><td>30%</td><td>closeness of <code>price</code> to <code>budget_mid</code></td></tr>
+          <tr><td>Size</td><td>20%</td><td><code>square_feet / 1000 × 100</code></td></tr>
+          <tr><td>Neighborhood</td><td>25%</td><td><code>neighborhood_score × 100</code></td></tr>
+          <tr><td>Amenities</td><td>15%</td><td>fraction of <code>must_haves</code> matched</td></tr>
+          <tr><td>Freshness</td><td>10%</td><td>placeholder (50) — reserved for <code>listed_date</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3>Query-aware ranking — <code>rank_listings()</code></h3>
+      <p>Wraps the base score with hard filters and preference boosts, then sorts descending:</p>
+      <pre><code><span class="tok-c"># 1) Hard filters (drop, never reorder)</span>
+drop if price &gt; budget_max × 1.1        <span class="tok-c"># over budget</span>
+drop if bedrooms &lt; bedrooms_min          <span class="tok-c"># too small</span>
+<span class="tok-c"># …falls back to ranking ALL listings if filters would empty the set</span>
+
+<span class="tok-c"># 2) Preference boosts on top of the base score</span>
+<span class="tok-k">if</span> "cheaper"  in tags: score += (1 − price_pos) × 18   <span class="tok-c"># favor low price</span>
+<span class="tok-k">if</span> "premium"  in tags: score += price_pos × 18         <span class="tok-c"># favor high price</span>
+<span class="tok-k">if</span> "spacious" in tags: score += size_pos × 18          <span class="tok-c"># favor large sqft</span>
+<span class="tok-k">if</span> "quiet"    in tags: score += +12 if 'quiet' in amenities else −5
+<span class="tok-k">if</span> "transit"  in tags: score += +12 if 'near_transit' in amenities else −5
+
+<span class="tok-c"># 3) sort by final score, best-first</span></code></pre>
+      <p><code>price_pos</code> and <code>size_pos</code> are min–max normalized across the candidate
+        set, so “cheaper” and “bigger” are relative to what is actually available.</p>
+
+      <div class="note good"><b>Observed behavior.</b> “cheaper 1 bedroom” floats the $2,950 unit up;
+        “bigger home with parking” floats the 1,700 sqft home up and filters to parking; “quiet under
+        $4000” boosts quiet-tagged listings and pushes the $4,100 unit below budget; “premium luxury
+        2 bed” filters out 1-beds and ranks the most expensive first.</div>
+
+      <h3>Neighborhood score — <code>score_neighborhoods()</code></h3>
+      <pre><code>score = 0.6 × (walk_score / 100) + 0.4 × (1 − min(median_price / 1,000,000, 1))</code></pre>
+    </section>
+
+    <!-- 7 BACKEND -->
+    <section id="backend">
+      <h2><span class="num">7</span> Backend deep dive</h2>
+      <h3>Module map</h3>
+      <pre><code>backend/app/
+├── main.py            <span class="tok-c"># FastAPI app · CORS · ExceptionMiddleware · rate limiter · /health</span>
+├── api/
+│   ├── routes.py      <span class="tok-c"># /api/recommend · /api/track-click · /api/health</span>
+│   └── middleware.py  <span class="tok-c"># ASGI ExceptionMiddleware → JSON 500</span>
+├── graph/
+│   ├── graph.py       <span class="tok-c"># 5-stage pipeline + arun/run/build entry points</span>
+│   ├── state.py       <span class="tok-c"># State dataclass</span>
+│   └── checkpointer.py<span class="tok-c"># LangGraph checkpoint scaffolding</span>
+├── agents/
+│   ├── intent.py        neighborhood.py   retrieval.py
+│   ├── scoring.py       explanation.py    <span class="tok-c"># the five stages</span>
+├── clients/
+│   ├── real_estate_api.py <span class="tok-c"># httpx client + demo catalog + retry/backoff</span>
+│   ├── anthropic.py       walk_score.py   google_places.py
+├── models/            <span class="tok-c"># Pydantic: intent · listing · neighborhood · api</span>
+├── db/                <span class="tok-c"># SQLAlchemy engine · Click model · init_db</span>
+└── observability.py   <span class="tok-c"># best-effort Sentry + LangSmith init</span></code></pre>
+
+      <h3>Middleware stack</h3>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+flowchart LR
+    REQ([Request]) --> CORS["CORSMiddleware<br/>(outermost)"]
+    CORS --> RL["Rate limiter<br/>60 req / hour / IP"]
+    RL --> EX["ExceptionMiddleware<br/>→ JSON 500"]
+    EX --> APP["Route handler"]
+    APP --> EX --> RL --> CORS --> RES([Response + CORS headers])
+        </div>
+        <div class="cap">Order matters: CORS wraps everything so all responses — including errors and 429s — get CORS headers.</div>
+      </div>
+      <ul class="clean">
+        <li><b>CORS</b> — allows <code>localhost:3000</code> and the production origin.</li>
+        <li><b>Rate limiter</b> — in-memory sliding window, 60 requests/hour per client IP (dev-grade).</li>
+        <li><b>ExceptionMiddleware</b> — converts uncaught exceptions to a clean JSON 500.</li>
+      </ul>
+
+      <h3>The real-estate client &amp; demo mode</h3>
+      <p><code>RealEstateAPIClient</code> uses <code>httpx</code> with retries and exponential backoff
+        and honors HTTP 429. When <code>REAL_ESTATE_API_KEY</code> is unset it short-circuits to a
+        curated 12-home San Francisco catalog (each tagged with amenities plus <code>quiet</code> /
+        <code>near_transit</code> signals), so the pipeline never makes a network call it can’t
+        satisfy.</p>
+    </section>
+
+    <!-- 8 FRONTEND -->
+    <section id="frontend">
+      <h2><span class="num">8</span> Frontend deep dive</h2>
+      <h3>Component tree</h3>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+flowchart TB
+    L["layout.tsx<br/>shell · header · footer · globals.css"] --> P["page.tsx<br/>hero"]
+    P --> RF["RecommendFlow<br/>(state owner)"]
+    P --> FTC["FtcDisclosure"]
+    RF --> SEARCH["search form + example chips"]
+    RF --> RC["RefineChat<br/>cheaper · bigger · quieter…"]
+    RF --> SK["Skeleton cards (loading)"]
+    RF --> IC["IntentCard<br/>parsed chips"]
+    RF --> NM["NeighborhoodMap<br/>score bars"]
+    RF --> LG["ListingsGrid"]
+    LG --> LC["ListingCard ×N<br/>photo · price · % match · amenities"]
+    RF -.-> API["lib/api-client.ts"]
+    LC -.-> TC["/api/track-click route"]
+
+    classDef c fill:#1e2747,stroke:#6366f1,color:#e6ebf5;
+    class L,P,RF,FTC,SEARCH,RC,SK,IC,NM,LG,LC c;
+        </div>
+      </div>
+      <ul class="clean">
+        <li><b>RecommendFlow</b> owns all state (query, loading, results, error, threadId) and
+          orchestrates submit + refine.</li>
+        <li><b>api-client.ts</b> validates the request and response with Zod, so malformed payloads
+          fail fast and loudly.</li>
+        <li><b>ListingCard</b> assigns a deterministic example photo per listing id (12 curated
+          images) with an inline SVG fallback, plus price/% -match badges and amenity chips.</li>
+        <li><b>thread-id.ts</b> persists a session <code>threadId</code> (localStorage) sent with each
+          request for conversational continuity.</li>
+        <li><b>/api/track-click</b> is a Next route handler that proxies click logging to the backend
+          and fires the affiliate pixel.</li>
+      </ul>
+    </section>
+
+    <!-- 9 CONTRACT -->
+    <section id="contract">
+      <h2><span class="num">9</span> API &amp; data models</h2>
+      <h3>Endpoints</h3>
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Body</th><th>Returns</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge b-info">GET</span></td><td><code>/health</code>, <code>/api/health</code></td><td>—</td><td><code>{ status: "ok" }</code></td><td>liveness</td></tr>
+          <tr><td><span class="badge b-good">POST</span></td><td><code>/api/recommend</code></td><td><code>{ userQuery, threadId? }</code></td><td>full <code>State</code> dict</td><td>runs the pipeline</td></tr>
+          <tr><td><span class="badge b-good">POST</span></td><td><code>/api/track-click</code></td><td><code>{ listingId, source, affiliateNetwork? }</code></td><td><code>{ ok: true }</code></td><td>needs Postgres <span class="badge b-warn">DB</span></td></tr>
+        </tbody>
+      </table>
+
+      <h3>Core models</h3>
+      <div class="grid cols-2">
+        <div class="card">
+          <h4>NormalizedListing</h4>
+          <pre style="margin:8px 0 0"><code>id, source_url, address
+price, bedrooms, bathrooms
+square_feet, photo_url
+source, listed_date
+amenities[]</code></pre>
+        </div>
+        <div class="card">
+          <h4>Intent</h4>
+          <pre style="margin:8px 0 0"><code>budget_min / max (+ budget_mid)
+bedrooms_min / max
+lifestyle_tags[]
+must_haves[]
+nice_to_haves[]
+commute_target</code></pre>
+        </div>
+        <div class="card">
+          <h4>NeighborhoodScore</h4>
+          <pre style="margin:8px 0 0"><code>name
+score (0–1)
+median_price
+walk_score</code></pre>
+        </div>
+        <div class="card">
+          <h4>Click <span class="badge b-warn">DB</span></h4>
+          <pre style="margin:8px 0 0"><code>id (pk)
+listing_id (idx)
+source
+affiliate_network
+timestamp</code></pre>
+        </div>
+      </div>
+      <div class="note"><b>Contract enforcement.</b> The backend uses Pydantic models; the frontend
+        mirrors the shapes with Zod (<code>src/types/api.ts</code>) and validates both the outgoing
+        request and the incoming response.</div>
+    </section>
+
+    <!-- 10 CONFIG -->
+    <section id="config">
+      <h2><span class="num">10</span> Configuration &amp; demo mode</h2>
+      <div class="note warn"><b>Important:</b> the backend reads config from <b>process environment
+        variables only</b> (<code>os.getenv</code>). It does <b>not</b> auto-load <code>.env</code> /
+        <code>.env.local</code> — export variables in the shell before launching Uvicorn. The
+        frontend <i>does</i> auto-load <code>frontend/.env.local</code> (Next.js).</div>
+      <table>
+        <thead><tr><th>Variable</th><th>Unlocks</th><th>Unset → demo behavior</th></tr></thead>
+        <tbody>
+          <tr><td><code>REAL_ESTATE_API_KEY</code> + <code>_URL</code></td><td>Live listings</td><td>Built-in SF catalog</td></tr>
+          <tr><td><code>ANTHROPIC_API_KEY</code></td><td>LLM intent + explanations</td><td>Heuristic fallbacks</td></tr>
+          <tr><td><code>DATABASE_URL</code></td><td>Click logging</td><td><code>/api/recommend</code> works; <code>track-click</code> 500s</td></tr>
+          <tr><td><code>WALK_SCORE_API_KEY</code>, <code>GOOGLE_PLACES_API_KEY</code></td><td>Enrichment</td><td>Skipped</td></tr>
+          <tr><td><code>LANGSMITH_*</code>, <code>SENTRY_DSN</code></td><td>Tracing / errors</td><td>Best-effort no-op</td></tr>
+          <tr><td><code>NEXT_PUBLIC_API_URL</code></td><td>Backend base URL (frontend)</td><td>defaults to <code>http://localhost:8000</code></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 11 PERSISTENCE -->
+    <section id="persistence">
+      <h2><span class="num">11</span> Persistence &amp; observability</h2>
+      <div class="grid cols-2">
+        <div class="card">
+          <h4>Persistence</h4>
+          <p class="k">SQLAlchemy 2 engine + <code>SessionLocal</code> (<code>db/engine.py</code>).
+            The only persisted entity today is <code>Click</code> (affiliate tracking). State is
+            otherwise computed per request; <code>graph/checkpointer.py</code> reserves a spot for
+            LangGraph checkpointing of conversation threads.</p>
+        </div>
+        <div class="card">
+          <h4>Observability</h4>
+          <p class="k"><code>init_observability()</code> wires Sentry (errors) and LangSmith (LLM
+            traces) at startup — strictly best-effort, wrapped in try/except so a missing library or
+            key never blocks boot.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12 RUN -->
+    <section id="run">
+      <h2><span class="num">12</span> Running &amp; testing</h2>
+      <h4>Backend · :8000</h4>
+      <pre><code>cd backend
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000</code></pre>
+      <h4>Frontend · :3000</h4>
+      <pre><code>cd frontend
+corepack enable      <span class="tok-c"># enables pnpm</span>
+pnpm install
+pnpm dev</code></pre>
+      <h4>Tests</h4>
+      <pre><code><span class="tok-c"># backend</span>  .venv\Scripts\python.exe -m pytest
+<span class="tok-c"># frontend</span> pnpm test      <span class="tok-c"># vitest</span>
+           pnpm e2e       <span class="tok-c"># playwright</span></code></pre>
+      <p>Open <a href="http://localhost:3000">localhost:3000</a>, search, and watch results reorder by
+        query. Interactive API docs: <a href="http://127.0.0.1:8000/docs">127.0.0.1:8000/docs</a>.
+        Full guide in the repo-root <code>README.md</code>.</p>
+    </section>
+
+    <!-- 13 DECISIONS -->
+    <section id="decisions">
+      <h2><span class="num">13</span> Design decisions &amp; rationale</h2>
+      <div class="grid cols-2">
+        <div class="card"><h4>Graceful degradation</h4><p class="k">Every external dependency is
+          optional with a deterministic fallback, so the app is always runnable and demoable.</p></div>
+        <div class="card"><h4>Async-native route</h4><p class="k">The route <code>await</code>s
+          <code>arun_pipeline()</code> directly instead of spinning a nested event loop — avoiding the
+          “event loop already running” class of bug.</p></div>
+        <div class="card"><h4>CORS outermost</h4><p class="k">Guarantees error and rate-limit
+          responses carry CORS headers, so client errors are legible instead of “Failed to fetch.”</p></div>
+        <div class="card"><h4>Validation at both ends</h4><p class="k">Pydantic on the server, Zod on
+          the client — the JSON contract is enforced symmetrically.</p></div>
+        <div class="card"><h4>Pure vs. LLM stages</h4><p class="k">Neighborhood/retrieval/scoring are
+          deterministic and unit-testable; only intent and explanation are LLM-capable, keeping cost
+          and nondeterminism contained.</p></div>
+        <div class="card"><h4>Relative preferences</h4><p class="k">“cheaper” / “bigger” are
+          normalized across the candidate set, so ranking is meaningful regardless of the absolute
+          price range available.</p></div>
+      </div>
+      <footer>
+        StayWiseAI architecture · diagrams render via Mermaid (CDN — needs internet) ·
+        keep this document in sync with <code>graph/</code>, <code>agents/</code>, and the frontend
+        <code>components/</code> when topology changes.
+      </footer>
+    </section>
+  </main>
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "base",
+    themeVariables: {
+      background: "#11182e",
+      primaryColor: "#1e2747",
+      primaryTextColor: "#e6ebf5",
+      primaryBorderColor: "#6366f1",
+      lineColor: "#7c87b0",
+      secondaryColor: "#161f3a",
+      tertiaryColor: "#0d1424",
+      fontFamily: "ui-sans-serif, system-ui, sans-serif",
+      fontSize: "14px"
+    },
+    flowchart: { curve: "basis", padding: 14 },
+    sequence: { actorMargin: 40, mirrorActors: false }
+  });
+</script>
+</body>
+</html>

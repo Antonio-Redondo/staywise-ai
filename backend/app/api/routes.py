@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from app.graph.graph import run_pipeline
+from app.graph.graph import arun_pipeline
 from app.db import SessionLocal, Click
 
 router = APIRouter()
@@ -27,7 +27,7 @@ async def health():
 async def recommend(req: RecommendRequest):
     if not req.userQuery:
         raise HTTPException(status_code=400, detail="userQuery required")
-    state = run_pipeline(req.userQuery, thread_id=req.threadId)
+    state = await arun_pipeline(req.userQuery, thread_id=req.threadId)
     return state
 
 

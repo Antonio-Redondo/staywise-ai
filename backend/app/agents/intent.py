@@ -2,6 +2,25 @@ import re
 from typing import List
 from app.models.intent import Intent
 
+# Preference keywords -> lifestyle tag. These influence ranking (see rank_listings).
+_PREFERENCE_KEYWORDS = {
+    "walkable": ["walk", "walkable"],
+    "transit": ["transit", "bart", "subway", "train", "metro", "commute"],
+    "quiet": ["quiet", "quieter", "peaceful", "calm", "residential"],
+    "spacious": ["spacious", "bigger", "larger", "large", "roomy", "more space"],
+    "cheaper": ["cheap", "cheaper", "affordable", "lower price", "save money"],
+    "premium": ["premium", "luxury", "luxurious", "high-end", "upscale", "more expensive"],
+}
+
+# Amenity keywords -> required amenity (must_have). Boosts listings that have them.
+_AMENITY_KEYWORDS = {
+    "parking": ["parking", "garage"],
+    "pet_friendly": ["pet", "pets", "dog", "cat"],
+    "in_unit_laundry": ["laundry", "washer", "dryer"],
+    "gym": ["gym", "fitness"],
+    "pool": ["pool"],
+}
+
 
 def parse_intent(text: str) -> Intent:
     """Lightweight intent parser used in tests and as a fallback when LLM
@@ -22,7 +41,7 @@ def parse_intent(text: str) -> Intent:
         budget_max = max(nums)
 
     # bedrooms: look for '2 bed' or '2-bedroom' patterns
-    beds = re.findall(r"(\d+)\s*(?:bed|br)\b", text_l)
+    beds = re.findall(r"(\d+)\s*(?:bedrooms|bedroom|beds|bed|br)\b", text_l)
     beds_nums = [int(b) for b in beds] if beds else []
     bedrooms_min = None
     bedrooms_max = None
@@ -33,8 +52,15 @@ def parse_intent(text: str) -> Intent:
     tags: List[str] = []
     if "bart" in text_l:
         tags.append("near_bart")
-    if "walk" in text_l or "walkable" in text_l:
-        tags.append("walkable")
+    for tag, keywords in _PREFERENCE_KEYWORDS.items():
+        if any(kw in text_l for kw in keywords):
+            tags.append(tag)
+    tags = list(dict.fromkeys(tags))  # dedupe, preserve order
+
+    must_haves: List[str] = []
+    for amenity, keywords in _AMENITY_KEYWORDS.items():
+        if any(kw in text_l for kw in keywords):
+            must_haves.append(amenity)
 
     return Intent(
         budget_min=budget_min,
@@ -42,4 +68,5 @@ def parse_intent(text: str) -> Intent:
         bedrooms_min=bedrooms_min,
         bedrooms_max=bedrooms_max,
         lifestyle_tags=tags,
+        must_haves=must_haves,
     )

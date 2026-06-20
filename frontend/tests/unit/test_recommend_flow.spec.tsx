@@ -30,7 +30,7 @@ describe('RecommendFlow', () => {
     expect(requestBody.userQuery).toBe('One bedroom in the Mission')
     expect(typeof requestBody.threadId).toBe('string')
     expect(requestBody.threadId.length).toBeGreaterThan(0)
-    expect(screen.getByText(/Session:/)).toBeInTheDocument()
+    expect(screen.getByText(/session/i)).toBeInTheDocument()
   })
 
   test('refinement appends message to existing query and resubmits', async () => {
@@ -44,7 +44,7 @@ describe('RecommendFlow', () => {
     const queryInput = screen.getByLabelText('Describe what you want') as HTMLTextAreaElement
     await userEvent.type(queryInput, 'near good transit')
 
-    await userEvent.click(screen.getByText('Quieter'))
+    await userEvent.click(screen.getByText(/Quieter/))
 
     expect(mockFetch).toHaveBeenCalledTimes(1)
     const requestBody = JSON.parse((mockFetch.mock.calls[0][1] as any).body)

@@ -9,6 +9,12 @@ import ErrorBanner from './error-banner'
 import { ensureThreadId } from '@/lib/thread-id'
 import { recommend } from '@/lib/api-client'
 
+const EXAMPLES = [
+  '2 bed, walkable, near BART, under $4000',
+  'Quiet 1 bedroom with in-unit laundry and parking',
+  'Family home close to good schools and parks',
+]
+
 export default function RecommendFlow() {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
@@ -70,46 +76,92 @@ export default function RecommendFlow() {
 
   return (
     <section>
-      <form onSubmit={handleSubmit}>
-        <label htmlFor="query">Describe what you want</label>
+      <form className="search" onSubmit={handleSubmit}>
+        <label className="search__label" htmlFor="query">
+          Describe what you want
+        </label>
         <textarea
           id="query"
           value={query}
+          placeholder="e.g. Sunny 2-bedroom, walkable to cafés, near BART, under $4,000/mo"
           onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setQuery(e.target.value)}
-          rows={4}
-          style={{ width: '100%' }}
+          rows={3}
         />
-        <div style={{ marginTop: 8 }}>
-          <button type="submit" disabled={loading || !query.trim()}>
-            {loading ? 'Searching…' : 'Find recommendations'}
+        <div className="chips" style={{ marginTop: 12 }}>
+          {EXAMPLES.map((ex) => (
+            <button
+              key={ex}
+              type="button"
+              className="chip chip--muted"
+              style={{ cursor: 'pointer' }}
+              onClick={() => setQuery(ex)}
+            >
+              {ex}
+            </button>
+          ))}
+        </div>
+        <div className="search__row">
+          {threadId && <span className="session-pill">session · {threadId.slice(0, 8)}</span>}
+          <button type="submit" className="btn btn--primary" disabled={loading || !query.trim()}>
+            {loading ? 'Searching…' : 'Find recommendations →'}
           </button>
         </div>
       </form>
 
-      {threadId && <div style={{ marginTop: 8, color: '#666' }}>Session: {threadId}</div>}
       <RefineChat onRefine={handleRefine} />
 
       {error && (
         <ErrorBanner
           message={error}
           onRetry={() => {
-            // retry last query if present
             if (query && query.trim()) submitQuery(query)
           }}
         />
       )}
 
-      {state && (
-        <div style={{ marginTop: 16 }}>
-          <h2>Intent</h2>
-          <IntentCard intent={state.intent} />
-
-          <h2>Neighborhoods</h2>
-          <NeighborhoodMap neighborhoods={state.neighborhoods} />
-
-          <h2>Listings</h2>
-          <ListingsGrid items={state.items} />
+      {loading && (
+        <div className="section">
+          <div className="listings-grid">
+            {[0, 1, 2].map((i) => (
+              <div className="skeleton-card" key={i}>
+                <div className="skeleton skeleton--media" />
+                <div className="skeleton skeleton--line" />
+                <div className="skeleton skeleton--line short" />
+                <div className="skeleton skeleton--line" style={{ marginBottom: 18 }} />
+              </div>
+            ))}
+          </div>
         </div>
+      )}
+
+      {!loading && state && (
+        <>
+          {state.intent && (
+            <div className="section">
+              <div className="section__head">
+                <h2>What we heard</h2>
+              </div>
+              <IntentCard intent={state.intent} />
+            </div>
+          )}
+
+          <div className="section">
+            <div className="section__head">
+              <h2>Neighborhoods</h2>
+            </div>
+            <NeighborhoodMap neighborhoods={state.neighborhoods} />
+          </div>
+
+          <div className="section">
+            <div className="section__head">
+              <h2>Your matches</h2>
+              <span className="section__count">
+                {state.items?.length || 0} {state.items?.length === 1 ? 'home' : 'homes'}
+              </span>
+            </div>
+            <ListingsGrid items={state.items} />
+          </div>
+        </>
       )}
     </section>
   )

@@ -39,15 +39,6 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://staywise.vercel.app"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 # Routes
 app.include_router(router)
 app.add_middleware(ExceptionMiddleware)
@@ -61,6 +52,19 @@ async def check_rate_limit(request, call_next):
 
         return JSONResponse({"error": "rate limit exceeded"}, status_code=429)
     return await call_next(request)
+
+
+# CORS middleware — added LAST so it is the outermost layer. This ensures the
+# Access-Control-Allow-Origin header is attached to every response, including
+# errors raised by ExceptionMiddleware and 429s from the rate limiter; otherwise
+# the browser blocks those responses and the fetch rejects with "Failed to fetch".
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "https://staywise.vercel.app"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/health")

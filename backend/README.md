@@ -4,9 +4,17 @@ Housing recommendation engine orchestrating a 5-agent LangGraph pipeline.
 
 ## Setup
 
-1. `pip install -r requirements.txt`
-2. Copy `.env.example` to `.env.local` and fill in API keys
-3. `python -m uvicorn app.main:app --reload`
+1. Create a venv and install deps: `python -m venv .venv` then
+   `.venv/Scripts/python.exe -m pip install -r requirements.txt`
+2. Run it: `.venv/Scripts/python.exe -m uvicorn app.main:app --reload --port 8000`
+
+No API keys are required — the app runs in **demo mode** (sample listings + heuristic
+agents) by default. See the repo-root [`README.md`](../README.md) for the full run guide.
+
+> **Config note:** this backend reads settings from **environment variables only**
+> (`os.getenv`). It does **not** auto-load `.env` / `.env.example`. To set a key, export it
+> in your shell before launching uvicorn (e.g. `$env:REAL_ESTATE_API_KEY = "…"`).
+> `.env.example` is a reference template.
 
 ## Project Structure
 

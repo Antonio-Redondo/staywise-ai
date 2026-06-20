@@ -10,13 +10,13 @@ describe('RefineChat', () => {
     const onRefine = vi.fn()
     render(<RefineChat onRefine={onRefine} />)
 
-    expect(screen.getByText('Cheaper')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('e.g. more sunlight, quieter street')).toBeInTheDocument()
+    expect(screen.getByText(/Cheaper/)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/more sunlight, quieter street/)).toBeInTheDocument()
 
-    await userEvent.click(screen.getByText('Cheaper'))
+    await userEvent.click(screen.getByText(/Cheaper/))
     expect(onRefine).toHaveBeenCalledWith('Show me cheaper options')
 
-    await userEvent.type(screen.getByPlaceholderText('e.g. more sunlight, quieter street'), 'more space')
+    await userEvent.type(screen.getByPlaceholderText(/more sunlight, quieter street/), 'more space')
     await userEvent.click(screen.getByRole('button', { name: /apply/i }))
     expect(onRefine).toHaveBeenCalledWith('more space')
   })

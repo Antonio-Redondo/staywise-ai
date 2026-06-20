@@ -9,7 +9,7 @@ except Exception:
 from app.agents.intent import parse_intent
 from app.agents.neighborhood import score_neighborhoods
 from app.agents.retrieval import fetch_and_normalize_listings
-from app.agents.scoring import score_listing
+from app.agents.scoring import rank_listings
 from app.agents.explanation import generate_explanation
 
 
@@ -43,29 +43,37 @@ async def _run_async_pipeline(state: State, client=None) -> State:
 
         client = RealEstateAPIClient()
 
-    listings = await fetch_and_normalize_listings(neighborhood_names, client, limit_per=3)
+    listings = await fetch_and_normalize_listings(neighborhood_names, client, limit_per=12)
     state.listings = [l.model_dump() if hasattr(l, "model_dump") else l.__dict__ for l in listings]
 
-    # 4. Scoring
-    scored = []
-    for l, ns in zip(listings, state.neighborhood_scores):
-        s = score_listing(l, intent, ns.get("score") or ns.get("score"))
-        scored.append({"listing": l.model_dump() if hasattr(l, "model_dump") else l.__dict__, "score": s})
-    state.scored = scored
+    # 4. Scoring + ranking — filter by budget/bedrooms and re-sort by a
+    # preference-weighted score so results change with the query (cheaper,
+    # bigger, quieter, near transit, etc.).
+    top_ns = state.neighborhood_scores[0] if state.neighborhood_scores else {}
+    ns_score = top_ns.get("score")
+    ranked = rank_listings(listings, intent, ns_score)
+    state.scored = [
+        {"listing": l.model_dump() if hasattr(l, "model_dump") else l.__dict__, "score": s}
+        for l, s in ranked
+    ]
 
-    # 5. Explanation
+    # 5. Explanation — in ranked order so the UI lines up.
     explained = []
-    for item in scored:
-        listing = item["listing"]
-        # rebuild a NormalizedListing for explanation helper
-        from app.models.listing import NormalizedListing
-
-        nl = NormalizedListing(**listing)
-        explanation = generate_explanation(nl, intent)
-        explained.append({"listing_id": listing.get("id"), "explanation": explanation})
+    for l, _ in ranked:
+        explanation = generate_explanation(l, intent)
+        explained.append({"listing_id": l.id, "explanation": explanation})
     state.explained = explained
 
     return state
+
+
+async def arun_pipeline(user_query: str, thread_id: Optional[str] = None, client=None) -> Dict[str, Any]:
+    """Async entry point. Use this from async contexts (e.g. FastAPI routes)
+    where an event loop is already running.
+    """
+    s = State(user_query=user_query, thread_id=thread_id)
+    result = await _run_async_pipeline(s, client=client)
+    return result.to_dict()
 
 
 def run_pipeline(user_query: str, thread_id: Optional[str] = None, client=None) -> Dict[str, Any]:

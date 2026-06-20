@@ -2,6 +2,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 from .listing import NormalizedListing
 from .intent import Intent
+from .neighborhood import NeighborhoodScore
 
 
 class RecommendRequest(BaseModel):
