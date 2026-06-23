@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StayWiseAI · Spec-Kit Architecture & Usage Guide</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel-2: #1c2430;
+    --border: #2d3748;
+    --text: #e6edf3;
+    --muted: #9aa7b4;
+    --accent: #58a6ff;
+    --accent-2: #7ee787;
+    --amber: #e3b341;
+    --pink: #ff7b72;
+    --purple: #bc8cff;
+    --mono: 'SF Mono', 'Cascadia Code', Consolas, 'Liberation Mono', monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: linear-gradient(180deg, #0d1117 0%, #0a0e14 100%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    font-size: 16px;
+  }
+  .layout { display: flex; max-width: 1400px; margin: 0 auto; }
+  nav.toc {
+    position: sticky; top: 0; align-self: flex-start;
+    width: 250px; height: 100vh; overflow-y: auto;
+    padding: 28px 18px; border-right: 1px solid var(--border);
+    font-size: 14px;
+  }
+  nav.toc h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 18px 0 8px; }
+  nav.toc a { display: block; color: var(--muted); text-decoration: none; padding: 4px 8px; border-radius: 6px; }
+  nav.toc a:hover { background: var(--panel-2); color: var(--accent); }
+  main { flex: 1; min-width: 0; padding: 40px 48px 120px; }
+  header.hero {
+    border-radius: 16px; padding: 40px;
+    background: radial-gradient(120% 120% at 0% 0%, #1f6feb33 0%, transparent 60%), var(--panel);
+    border: 1px solid var(--border); margin-bottom: 40px;
+  }
+  header.hero h1 { margin: 0 0 8px; font-size: 34px; letter-spacing: -0.5px; }
+  header.hero p.sub { margin: 0; color: var(--muted); font-size: 18px; }
+  .badges { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .badge {
+    font-family: var(--mono); font-size: 12px; padding: 4px 10px; border-radius: 20px;
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--accent-2);
+  }
+  .badge.amber { color: var(--amber); }
+  .badge.pink { color: var(--pink); }
+  .badge.purple { color: var(--purple); }
+  section { margin-bottom: 56px; scroll-margin-top: 20px; }
+  h2.sec { font-size: 26px; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px; }
+  h3 { font-size: 19px; color: var(--accent); margin-top: 32px; }
+  p { color: #cdd6e0; }
+  code.inline { font-family: var(--mono); font-size: 13px; background: var(--panel-2); padding: 2px 7px; border-radius: 5px; color: var(--accent-2); border: 1px solid var(--border); }
+  pre {
+    background: #0a0e14; border: 1px solid var(--border); border-radius: 10px;
+    padding: 18px; overflow-x: auto; font-family: var(--mono); font-size: 13.5px; line-height: 1.55;
+  }
+  pre .c { color: #6e7681; }
+  pre .k { color: var(--pink); }
+  pre .s { color: var(--accent-2); }
+  pre .v { color: var(--amber); }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 22px; margin: 16px 0; }
+  .grid { display: grid; gap: 16px; }
+  .grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .grid.cols-3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14.5px; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td code, th code { font-family: var(--mono); color: var(--accent-2); font-size: 13px; }
+  .note { border-left: 3px solid var(--accent); background: #1f6feb1a; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+  .warn { border-left: 3px solid var(--amber); background: #e3b3411a; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+  .tip  { border-left: 3px solid var(--accent-2); background: #7ee7871a; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+
+  /* Pipeline diagram */
+  .pipeline { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0; margin: 24px 0; }
+  .stage {
+    flex: 1; min-width: 130px; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 14px; text-align: center; position: relative;
+  }
+  .stage .cmd { font-family: var(--mono); font-size: 13px; color: var(--accent); font-weight: 600; }
+  .stage .lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .stage .out { font-family: var(--mono); font-size: 11px; color: var(--amber); margin-top: 8px; display: block; }
+  .arrow { display: flex; align-items: center; color: var(--muted); font-size: 22px; padding: 0 6px; }
+  .gate { border-color: var(--amber); }
+  .gate .cmd { color: var(--amber); }
+
+  /* Layered architecture */
+  .layer { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin: 20px 0; }
+  .layer-row { display: flex; align-items: stretch; border-bottom: 1px solid var(--border); }
+  .layer-row:last-child { border-bottom: none; }
+  .layer-tag {
+    width: 150px; flex-shrink: 0; background: var(--panel-2); padding: 16px;
+    font-family: var(--mono); font-size: 12px; color: var(--purple); display: flex; align-items: center;
+    border-right: 1px solid var(--border);
+  }
+  .layer-body { flex: 1; padding: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-family: var(--mono); font-size: 12px; padding: 5px 10px; border-radius: 6px; background: #0a0e14; border: 1px solid var(--border); color: var(--text); }
+  .chip.a { color: var(--accent); }
+  .chip.g { color: var(--accent-2); }
+  .chip.m { color: var(--amber); }
+
+  ol.steps { counter-reset: step; list-style: none; padding: 0; }
+  ol.steps > li {
+    position: relative; padding: 18px 18px 18px 64px; margin: 14px 0;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+  }
+  ol.steps > li::before {
+    counter-increment: step; content: counter(step);
+    position: absolute; left: 18px; top: 18px; width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--purple)); color: #fff;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 15px;
+  }
+  ol.steps > li h4 { margin: 2px 0 8px; font-size: 17px; color: var(--text); }
+  footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); padding-top: 24px; margin-top: 60px; }
+  a { color: var(--accent); }
+  .kbd { font-family: var(--mono); font-size: 12px; background: var(--panel-2); border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 5px; padding: 2px 7px; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav class="toc">
+    <h2>Contents</h2>
+    <a href="#what">What is Spec-Kit</a>
+    <a href="#arch">System Architecture</a>
+    <a href="#layout">On-Disk Layout</a>
+    <a href="#commands">Command Reference</a>
+    <a href="#extensions">Git Extension & Hooks</a>
+    <a href="#workflow">SDD Workflow Engine</a>
+    <h2>How To Use</h2>
+    <a href="#step-0">0 · Prerequisites</a>
+    <a href="#step-1">1 · Constitution</a>
+    <a href="#step-2">2 · Specify</a>
+    <a href="#step-3">3 · Clarify</a>
+    <a href="#step-4">4 · Plan</a>
+    <a href="#step-5">5 · Tasks</a>
+    <a href="#step-6">6 · Analyze</a>
+    <a href="#step-7">7 · Implement</a>
+    <a href="#step-8">8 · Verify</a>
+    <a href="#oneshot">One-shot workflow</a>
+    <a href="#tips">Tips & Pitfalls</a>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <h1>Spec-Kit Architecture &amp; Usage Guide</h1>
+      <p class="sub">Spec-Driven Development for <strong>StayWiseAI</strong> — how the toolkit is wired and how to drive it end to end.</p>
+      <div class="badges">
+        <span class="badge">spec-kit v0.8.17.dev0</span>
+        <span class="badge amber">integration: copilot</span>
+        <span class="badge pink">scripts: PowerShell</span>
+        <span class="badge purple">extension: git (auto-commit)</span>
+        <span class="badge">constitution v1.0.0</span>
+      </div>
+    </header>
+
+    <!-- ============ WHAT ============ -->
+    <section id="what">
+      <h2 class="sec">What is Spec-Kit</h2>
+      <p><strong>Spec-Kit</strong> is GitHub's toolkit for <em>Spec-Driven Development (SDD)</em>: instead of prompting an AI agent to "just build it," you build software in disciplined, reviewable phases. Each phase produces a durable Markdown artifact that the next phase consumes. The intent, not the code, is the source of truth.</p>
+      <p>The core idea encoded in this repo's <code class="inline">constitution.md</code> is a strictly linear pipeline:</p>
+      <div class="pipeline">
+        <div class="stage"><span class="cmd">/constitution</span><span class="lbl">Project rules</span><span class="out">constitution.md</span></div>
+        <div class="arrow">→</div>
+        <div class="stage"><span class="cmd">/specify</span><span class="lbl">The <em>what</em></span><span class="out">spec.md</span></div>
+        <div class="arrow">→</div>
+        <div class="stage"><span class="cmd">/plan</span><span class="lbl">The <em>how</em></span><span class="out">plan.md</span></div>
+        <div class="arrow">→</div>
+        <div class="stage"><span class="cmd">/tasks</span><span class="lbl">The work list</span><span class="out">tasks.md</span></div>
+        <div class="arrow">→</div>
+        <div class="stage"><span class="cmd">/implement</span><span class="lbl">The code</span><span class="out">src/**</span></div>
+      </div>
+      <div class="note">In StayWiseAI the linear order is <strong>constitutional law</strong>: "Skipping phases is not allowed. If implementation reveals the spec is wrong, update the spec first before continuing." (constitution.md, Process Principles).</div>
+    </section>
+
+    <!-- ============ ARCHITECTURE ============ -->
+    <section id="arch">
+      <h2 class="sec">System Architecture</h2>
+      <p>Spec-kit is not a runtime library inside your app. It is a layer of <strong>prompts, scripts, templates and state files</strong> that sits between you, your AI coding agent (GitHub Copilot here), and your repository. The agent reads the prompts and templates; the scripts do the deterministic file/branch plumbing; the state files track which feature is active.</p>
+
+      <div class="layer">
+        <div class="layer-row">
+          <div class="layer-tag">① Human</div>
+          <div class="layer-body">
+            <span class="chip a">You type /speckit.* commands</span>
+            <span class="chip a">Review gates (approve / reject)</span>
+            <span class="chip a">Answer clarification questions</span>
+          </div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-tag">② Agent layer<br>(Copilot)</div>
+          <div class="layer-body">
+            <span class="chip g">.github/prompts/speckit.*.prompt.md</span>
+            <span class="chip g">.github/agents/speckit.*.agent.md</span>
+            <span class="chip g">.github/copilot-instructions.md</span>
+          </div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-tag">③ Orchestration</div>
+          <div class="layer-body">
+            <span class="chip m">.specify/workflows/speckit/workflow.yml</span>
+            <span class="chip m">.specify/extensions.yml (hooks)</span>
+            <span class="chip m">.specify/integration.json (active integration)</span>
+          </div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-tag">④ Scripts<br>(deterministic)</div>
+          <div class="layer-body">
+            <span class="chip">create-new-feature.ps1</span>
+            <span class="chip">setup-plan.ps1</span>
+            <span class="chip">setup-tasks.ps1</span>
+            <span class="chip">check-prerequisites.ps1</span>
+            <span class="chip">common.ps1</span>
+            <span class="chip">git/auto-commit.ps1</span>
+          </div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-tag">⑤ Templates</div>
+          <div class="layer-body">
+            <span class="chip">spec-template.md</span>
+            <span class="chip">plan-template.md</span>
+            <span class="chip">tasks-template.md</span>
+            <span class="chip">checklist-template.md</span>
+            <span class="chip">constitution-template.md</span>
+          </div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-tag">⑥ Artifacts<br>(source of truth)</div>
+          <div class="layer-body">
+            <span class="chip a">.specify/memory/constitution.md</span>
+            <span class="chip a">.specify/specs/NNN-feature/spec.md</span>
+            <span class="chip a">…/plan.md</span>
+            <span class="chip a">…/tasks.md</span>
+            <span class="chip a">…/checklists/*.md</span>
+          </div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-tag">⑦ Your codebase</div>
+          <div class="layer-body">
+            <span class="chip g">src/skills/ (pure functions)</span>
+            <span class="chip g">src/graph/nodes/ (LangGraph)</span>
+            <span class="chip g">src/clients/ · tests · UI</span>
+          </div>
+        </div>
+      </div>
+
+      <h3>Control flow of a single command</h3>
+      <p>When you invoke a command such as <code class="inline">/speckit.specify</code>, this is what fires:</p>
+      <div class="card">
+<pre><span class="c"># 1. Copilot loads the prompt definition</span>
+.github/prompts/speckit.specify.prompt.md
+
+<span class="c"># 2. Pre-hook fires (from .specify/extensions.yml → before_specify)</span>
+git extension → <span class="k">speckit.git.feature</span>   <span class="c"># create feature branch 001-...</span>
+
+<span class="c"># 3. The prompt tells the agent to run the scaffolding script</span>
+.specify/scripts/powershell/<span class="v">create-new-feature.ps1</span>
+   → creates .specify/specs/001-housing-recommendations/
+   → copies spec-template.md → spec.md
+   → updates .specify/feature.json  (active feature pointer)
+
+<span class="c"># 4. Agent fills spec.md from your description + the template structure</span>
+
+<span class="c"># 5. Post-hook fires (after_specify)</span>
+git extension → <span class="k">speckit.git.commit</span>      <span class="c"># optional auto-commit</span></pre>
+      </div>
+      <div class="tip"><strong>Separation of concerns:</strong> the AI never invents file paths or branch names. The PowerShell scripts own all filesystem and git side effects deterministically; the agent only fills in <em>content</em>. That is what makes the workflow reproducible.</div>
+    </section>
+
+    <!-- ============ LAYOUT ============ -->
+    <section id="layout">
+      <h2 class="sec">On-Disk Layout</h2>
+      <p>Everything spec-kit owns lives under <code class="inline">.specify/</code> plus the Copilot-facing files under <code class="inline">.github/</code>.</p>
+<pre>StayWiseAI/
+├─ <span class="v">.specify/</span>
+│  ├─ memory/
+│  │  └─ <span class="s">constitution.md</span>          <span class="c"># project law — v1.0.0, 10 code + 4 process principles</span>
+│  ├─ specs/
+│  │  └─ 001-housing-recommendations/
+│  │     ├─ <span class="s">spec.md</span>               <span class="c"># WHAT — user stories, requirements, success criteria</span>
+│  │     ├─ <span class="s">plan.md</span>               <span class="c"># HOW — architecture, tech decisions</span>
+│  │     ├─ <span class="s">tasks.md</span>              <span class="c"># ordered, testable task list</span>
+│  │     └─ checklists/
+│  │        └─ requirements.md     <span class="c"># quality gate checklist</span>
+│  ├─ templates/                   <span class="c"># skeletons the agent fills in</span>
+│  │  ├─ spec-template.md  plan-template.md  tasks-template.md
+│  │  ├─ checklist-template.md  constitution-template.md
+│  ├─ scripts/powershell/          <span class="c"># deterministic plumbing (script: "ps")</span>
+│  │  ├─ create-new-feature.ps1    setup-plan.ps1   setup-tasks.ps1
+│  │  ├─ check-prerequisites.ps1   common.ps1
+│  ├─ extensions/git/              <span class="c"># auto-commit extension (bash + powershell)</span>
+│  │  ├─ commands/  scripts/  extension.yml  git-config.yml
+│  ├─ workflows/speckit/workflow.yml   <span class="c"># "Full SDD Cycle" one-shot pipeline</span>
+│  ├─ extensions.yml               <span class="c"># hook wiring: before_/after_ each phase</span>
+│  ├─ integration.json             <span class="c"># active integration = copilot</span>
+│  ├─ feature.json                 <span class="c"># pointer to active feature dir</span>
+│  └─ init-options.json            <span class="c"># ai=copilot, script=ps, sequential branches</span>
+│
+└─ <span class="v">.github/</span>
+   ├─ prompts/   speckit.*.prompt.md   <span class="c"># 9 slash-command definitions</span>
+   ├─ agents/    speckit.*.agent.md    <span class="c"># agent personas per command</span>
+   ├─ copilot-instructions.md          <span class="c"># global agent context</span>
+   └─ instructions/                    <span class="c"># binding style/stack rules (referenced by constitution)</span>
+      ├─ style-guide.instructions.md     project-context.instructions.md
+      ├─ langgraph.instructions.md       ui.instructions.md   db.instructions.md</pre>
+    </section>
+
+    <!-- ============ COMMANDS ============ -->
+    <section id="commands">
+      <h2 class="sec">Command Reference</h2>
+      <p>All commands are invoked from the Copilot chat as <code class="inline">/speckit.&lt;name&gt;</code>. The installed set (from <code class="inline">.github/prompts/</code>):</p>
+      <table>
+        <thead><tr><th>Command</th><th>Phase</th><th>Reads</th><th>Produces</th></tr></thead>
+        <tbody>
+          <tr><td><code>/speckit.constitution</code></td><td>Setup</td><td>your principles</td><td><code>memory/constitution.md</code></td></tr>
+          <tr><td><code>/speckit.specify</code></td><td>1 · What</td><td>feature description</td><td><code>spec.md</code> + feature branch</td></tr>
+          <tr><td><code>/speckit.clarify</code></td><td>1.5 · De-risk</td><td><code>spec.md</code></td><td>Q&amp;A appended to <code>spec.md</code></td></tr>
+          <tr><td><code>/speckit.plan</code></td><td>2 · How</td><td><code>spec.md</code> + constitution</td><td><code>plan.md</code></td></tr>
+          <tr><td><code>/speckit.tasks</code></td><td>3 · Decompose</td><td><code>plan.md</code></td><td><code>tasks.md</code></td></tr>
+          <tr><td><code>/speckit.checklist</code></td><td>3.5 · Gate</td><td>spec + plan + tasks</td><td><code>checklists/*.md</code></td></tr>
+          <tr><td><code>/speckit.analyze</code></td><td>3.5 · Audit</td><td>all artifacts</td><td>consistency report (read-only)</td></tr>
+          <tr><td><code>/speckit.implement</code></td><td>4 · Build</td><td><code>tasks.md</code></td><td>source code + tests</td></tr>
+          <tr><td><code>/speckit.taskstoissues</code></td><td>Optional</td><td><code>tasks.md</code></td><td>GitHub Issues</td></tr>
+        </tbody>
+      </table>
+      <div class="note">This project's constitution mandates only the spine — <strong>constitution → specify → plan → tasks → implement</strong>. <code class="inline">clarify</code>, <code class="inline">checklist</code> and <code class="inline">analyze</code> are quality boosters you should use, but they are not separate "phases" you may use to skip ahead.</div>
+    </section>
+
+    <!-- ============ EXTENSIONS ============ -->
+    <section id="extensions">
+      <h2 class="sec">Git Extension &amp; Hooks</h2>
+      <p>This repo installs the <strong>git extension</strong> (<code class="inline">.specify/extensions.yml → installed: [git]</code>) with <code class="inline">auto_execute_hooks: true</code>. It binds git actions to lifecycle points around every phase.</p>
+      <div class="grid cols-2">
+        <div class="card">
+          <h4 style="margin-top:0;color:var(--accent)">Required hooks</h4>
+          <ul>
+            <li><code class="inline">before_constitution</code> → <strong>git.initialize</strong> (sets up the repo)</li>
+            <li><code class="inline">before_specify</code> → <strong>git.feature</strong> (creates the <code class="inline">NNN-feature</code> branch)</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4 style="margin-top:0;color:var(--amber)">Optional auto-commit hooks</h4>
+          <p style="margin:0">A <code class="inline">git.commit</code> hook runs <em>before</em> and <em>after</em> clarify, plan, tasks, implement, checklist, analyze, and taskstoissues — each prompts you first, so every phase boundary becomes a clean, revertible commit.</p>
+        </div>
+      </div>
+      <p>The net effect: each phase produces its own commit, so the git history mirrors the SDD pipeline and any phase can be rolled back independently.</p>
+    </section>
+
+    <!-- ============ WORKFLOW ============ -->
+    <section id="workflow">
+      <h2 class="sec">SDD Workflow Engine (one-shot)</h2>
+      <p>Besides running commands one at a time, <code class="inline">.specify/workflows/speckit/workflow.yml</code> defines a bundled <strong>"Full SDD Cycle"</strong> that chains the four core commands with human <strong>review gates</strong> between them:</p>
+      <div class="pipeline">
+        <div class="stage"><span class="cmd">specify</span><span class="lbl">step</span></div>
+        <div class="arrow">→</div>
+        <div class="stage gate"><span class="cmd">review-spec</span><span class="lbl">gate · approve/reject</span></div>
+        <div class="arrow">→</div>
+        <div class="stage"><span class="cmd">plan</span><span class="lbl">step</span></div>
+        <div class="arrow">→</div>
+        <div class="stage gate"><span class="cmd">review-plan</span><span class="lbl">gate · approve/reject</span></div>
+        <div class="arrow">→</div>
+        <div class="stage"><span class="cmd">tasks</span><span class="lbl">step</span></div>
+        <div class="arrow">→</div>
+        <div class="stage"><span class="cmd">implement</span><span class="lbl">step</span></div>
+      </div>
+      <p>Inputs it asks for: <code class="inline">spec</code> (what to build), <code class="inline">integration</code> (defaults to <code class="inline">auto</code> → resolves to <code class="inline">copilot</code>), and <code class="inline">scope</code> (<code class="inline">full</code> / <code class="inline">backend-only</code> / <code class="inline">frontend-only</code>). A <strong>reject</strong> at either gate aborts the run, so you never silently flow a bad spec into code.</p>
+      <div class="warn">The workflow requires <code class="inline">speckit_version &gt;= 0.8.5</code> for engine-side resolution of the <code class="inline">integration: "auto"</code> default. This repo runs 0.8.17, so it is satisfied.</div>
+    </section>
+
+    <!-- ============ HOW TO USE ============ -->
+    <h2 class="sec" style="font-size:30px;margin-top:20px">Step-by-Step: How to Use Spec-Kit</h2>
+
+    <section id="step-0">
+      <h3>0 · Prerequisites</h3>
+      <ol class="steps">
+        <li>
+          <h4>Confirm the toolchain</h4>
+          <p>You need GitHub Copilot in VS Code (the active integration), PowerShell (the configured script runtime), and git. Verify spec-kit is wired up:</p>
+<pre><span class="c"># active integration should print "copilot"</span>
+cat .specify/integration.json</pre>
+        </li>
+        <li>
+          <h4>Open the Copilot chat</h4>
+          <p>All <code class="inline">/speckit.*</code> commands are typed into the Copilot chat panel. Typing <code class="inline">/</code> shows the installed commands from <code class="inline">.github/prompts/</code>.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section id="step-1">
+      <h3>1 · Establish the Constitution <span class="badge purple" style="font-size:11px">already done — v1.0.0</span></h3>
+      <ol class="steps">
+        <li>
+          <h4>Run it once per project</h4>
+          <p>The constitution is the non-negotiable rulebook every later phase must obey. StayWiseAI already has one (TypeScript strict, named exports only, Zod at every boundary, pure skills, structured LLM output, etc.).</p>
+<pre>/speckit.constitution
+
+<span class="c"># Example amendment prompt:</span>
+Add a principle requiring all API routes to validate
+input with Zod before any I/O. Bump to v1.1.0.</pre>
+        </li>
+        <li>
+          <h4>When to revisit</h4>
+          <p>Only amend it when a durable rule changes. Amendments must bump the version and add a Sync Impact Report entry at the top of <code class="inline">constitution.md</code>.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section id="step-2">
+      <h3>2 · Specify — the <em>what</em></h3>
+      <ol class="steps">
+        <li>
+          <h4>Describe the feature in plain language</h4>
+          <p>The <code class="inline">before_specify</code> hook auto-creates a numbered feature branch, the script scaffolds the folder, and the agent fills <code class="inline">spec.md</code> from the template. Describe behavior and outcomes, <strong>not</strong> implementation.</p>
+<pre>/speckit.specify Build a saved-search feature: a signed-in user can
+save the current query and lifestyle filters, name it, and get an
+email when 3+ new matching listings appear. Out of scope: SMS alerts.</pre>
+        </li>
+        <li>
+          <h4>What you get</h4>
+          <p>A new <code class="inline">.specify/specs/002-saved-search/spec.md</code> with user stories (prioritized P1/P2/P3, each independently testable), functional requirements, success criteria, edge cases, and key entities — mirroring the existing <code class="inline">001-housing-recommendations/spec.md</code>.</p>
+        </li>
+        <li>
+          <h4>Read it before moving on</h4>
+          <p>The spec is the contract. Look for <code class="inline">[NEEDS CLARIFICATION]</code> markers — they signal unresolved ambiguity.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section id="step-3">
+      <h3>3 · Clarify — de-risk ambiguity</h3>
+      <ol class="steps">
+        <li>
+          <h4>Let the agent interrogate the spec</h4>
+          <p>The agent asks targeted questions and records each as a Q&amp;A entry under a <code class="inline">## Clarifications</code> session block (see the 5 resolved questions in the housing spec).</p>
+<pre>/speckit.clarify</pre>
+        </li>
+        <li>
+          <h4>Answer concretely</h4>
+          <p>Each answer is written back into the spec so downstream phases inherit the decision. Resolve <em>every</em> ambiguity here — it is far cheaper than discovering it during <code class="inline">/implement</code>.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section id="step-4">
+      <h3>4 · Plan — the <em>how</em></h3>
+      <ol class="steps">
+        <li>
+          <h4>Generate the technical plan</h4>
+          <p><code class="inline">setup-plan.ps1</code> scaffolds <code class="inline">plan.md</code>; the agent fills it by reading the spec <strong>and</strong> the constitution. It includes a <strong>Constitution Check</strong> gate that asserts TypeScript strict, test coverage, and Zod boundaries.</p>
+<pre>/speckit.plan Use the existing LangGraph pipeline. Add a Drizzle
+table saved_searches, a Postgres-backed cron poller, and reuse the
+scoring skill. Email via Resend.</pre>
+        </li>
+        <li>
+          <h4>Verify constitutional compliance</h4>
+          <p>If the plan proposes anything that violates a principle (a default export, an unstructured LLM call, a model instantiated inside a node), fix the plan now.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section id="step-5">
+      <h3>5 · Tasks — decompose into work</h3>
+      <ol class="steps">
+        <li>
+          <h4>Break the plan into ordered, testable tasks</h4>
+          <p><code class="inline">setup-tasks.ps1</code> + the agent turn the plan into <code class="inline">tasks.md</code>: a dependency-ordered list where each task is small and independently verifiable.</p>
+<pre>/speckit.tasks</pre>
+        </li>
+        <li>
+          <h4>Tests are mandatory here</h4>
+          <p>The constitution overrides the template's old "tests are OPTIONAL" note: <em>"A task is not done until tests pass."</em> Each task should carry its test expectation.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section id="step-6">
+      <h3>6 · Checklist &amp; Analyze — quality gates (recommended)</h3>
+      <ol class="steps">
+        <li>
+          <h4>Generate a requirements checklist</h4>
+<pre>/speckit.checklist</pre>
+          <p>Produces <code class="inline">checklists/requirements.md</code> — a verifiable gate that the spec, plan, and tasks are internally complete.</p>
+        </li>
+        <li>
+          <h4>Cross-artifact consistency audit</h4>
+<pre>/speckit.analyze</pre>
+          <p>Read-only. Flags drift between spec ↔ plan ↔ tasks (a requirement with no task, a task with no requirement, a constitution violation). Fix findings before building.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section id="step-7">
+      <h3>7 · Implement — build the code</h3>
+      <ol class="steps">
+        <li>
+          <h4>Execute the task list</h4>
+          <p>The agent works through <code class="inline">tasks.md</code> in order, writing source under <code class="inline">src/skills/</code> (pure functions) and <code class="inline">src/graph/nodes/</code> (orchestration), plus tests, honoring every constitutional principle.</p>
+<pre>/speckit.implement</pre>
+        </li>
+        <li>
+          <h4>The agent proves completion</h4>
+          <p>Per the "Tests Prove Completion" principle, stub implementations are rejected — a task closes only on green test output. The <code class="inline">after_implement</code> hook offers to commit the result.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section id="step-8">
+      <h3>8 · Verify — manual gate before "done"</h3>
+      <ol class="steps">
+        <li>
+          <h4>Run the full quality gate</h4>
+          <p>The constitution's "Manual Verification After Every Implementation" requires all four to pass:</p>
+<pre>pnpm test
+pnpm typecheck
+pnpm build
+<span class="c"># + a smoke test: manual UI test (frontend) or LangGraph trace (agent)</span></pre>
+        </li>
+        <li>
+          <h4>Open the PR</h4>
+          <p>The PR Quality Gate (Principle X) requires <code class="inline">pnpm test · lint · typecheck · build</code> to pass in CI, plus a manual smoke test for agent/UI changes, before merge.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section id="oneshot">
+      <h3 style="margin-top:10px">Alternative · Run the whole cycle at once</h3>
+      <p>If you prefer the bundled pipeline with built-in review gates instead of typing each command, invoke the <strong>Full SDD Cycle</strong> workflow. It runs specify → <em>(approve)</em> → plan → <em>(approve)</em> → tasks → implement, pausing for your approval after the spec and after the plan.</p>
+      <div class="tip">Use single commands when you are exploring or the feature is fuzzy (more control, more clarify loops). Use the bundled workflow when the feature is well understood and you want momentum with two safety gates.</div>
+    </section>
+
+    <section id="tips">
+      <h3 style="margin-top:10px">Tips &amp; Common Pitfalls</h3>
+      <div class="grid cols-2">
+        <div class="card"><h4 style="margin-top:0;color:var(--accent-2)">✅ Do</h4>
+          <ul>
+            <li>Resolve <strong>all</strong> ambiguity in <code class="inline">/clarify</code> before planning.</li>
+            <li>Read each artifact before running the next phase.</li>
+            <li>Let auto-commit hooks run — they make every phase revertible.</li>
+            <li>Treat the spec, not the code, as the source of truth.</li>
+            <li>Run <code class="inline">/analyze</code> on anything non-trivial.</li>
+          </ul>
+        </div>
+        <div class="card"><h4 style="margin-top:0;color:var(--pink)">⛔ Don't</h4>
+          <ul>
+            <li>Skip phases — it violates the constitution and breaks traceability.</li>
+            <li>Edit code to fix a spec gap — fix the spec first, then re-flow.</li>
+            <li>Put implementation detail in <code class="inline">spec.md</code> (that's <code class="inline">plan.md</code>'s job).</li>
+            <li>Hand-write TypeScript types — infer them from Zod schemas.</li>
+            <li>Mark a task done without green tests.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="note"><strong>Mental model:</strong> spec-kit turns "vibe coding" into a reviewable supply chain. Every line of code is traceable backward through a task → a plan decision → a spec requirement → a constitutional principle. When something breaks, you fix it at the highest layer it originates from, then let the change flow back down.</div>
+    </section>
+
+    <footer>
+      Generated for <strong>StayWiseAI</strong> · spec-kit v0.8.17.dev0 · integration: copilot · constitution v1.0.0 (ratified 2026-05-28).<br>
+      Artifacts of record live in <code class="inline">.specify/</code>; agent prompts live in <code class="inline">.github/</code>. This document describes the toolkit as installed in this repository.
+    </footer>
+  </main>
+</div>
+</body>
+</html>
